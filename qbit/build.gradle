@@ -1,0 +1,599 @@
+/*
+ * Copyright (c) 2015. Rick Hightower, Geoff Chandler
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  		http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * QBit - The Microservice lib for Java : JSON, WebSocket, REST. Be The Web!
+ */
+
+subprojects {
+
+    apply plugin: 'maven'
+    apply plugin: 'signing'
+    //apply plugin: "jacoco"
+
+    group = 'io.advantageous.qbit'
+    version = projectVersion
+    archivesBaseName = "qbit-$project.name"
+
+    test.onlyIf { !Boolean.getBoolean('skip.tests') }
+
+    dependencies {
+        compile 'org.slf4j:slf4j-api:[1.7,1.8)'
+        testCompile 'junit:junit:4.10'
+        testCompile 'org.mockito:mockito-core:2.0.4-beta'
+        testCompile 'ch.qos.logback:logback-classic:1.1.2'
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from 'build/docs/javadoc'
+    }
+
+    task sourcesJar(type: Jar) {
+        from sourceSets.main.allSource
+        classifier = 'sources'
+    }
+
+    artifacts {
+        archives jar
+        archives javadocJar
+        archives sourcesJar
+        /*
+        archives file("build/libs/qbit-${name}-${version}.jar.asc")
+        archives file("build/libs/qbit-${name}-${version}-javadoc.jar.asc")
+        archives file("build/libs/qbit-${name}-${version}-sources.jar.asc")
+        */
+    }
+
+    signing {
+        required false
+        sign configurations.archives
+    }
+
+    test {
+//        jacoco {
+//            append = false
+//            destinationFile = file("$buildDir/jacoco/jacocoTest.exec")
+//            classDumpFile = file("$buildDir/jacoco/classpathdumps")
+//        }
+    }
+
+//    jacoco {
+//        reportsDir = file("$buildDir/customJacocoReportDir")
+//    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                    try {
+                        authentication(userName: sonatypeUsername, password: sonatypePassword)
+                    } catch (MissingPropertyException ignore) {
+                    }
+                }
+
+                snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                    try {
+                        authentication(userName: sonatypeUsername, password: sonatypePassword)
+                    } catch (MissingPropertyException ignore) {
+                    }
+                }
+
+                pom.project {
+                    packaging 'jar'
+                    url 'https://github.com/advantageous/qbit'
+                    name archivesBaseName
+
+                    scm {
+                        url 'scm:git@github.com:advantageous/qbit.git'
+                        connection 'scm:git@github.com:advantageous/qbit.git'
+                        developerConnection 'scm:git@github.com:advantageous/qbit.git'
+                    }
+
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                            distribution 'repo'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id 'richardHightower'
+                            name 'Richard Hightower'
+                        }
+                        developer {
+                            id 'sailorgeoffrey'
+                            name 'Geoffrey Chandler'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+project('core') {
+
+    dependencies {
+        compile "$boonGroup:boon-reflekt:$boonVersion"
+        compile "$boonGroup:boon-json:$boonVersion"
+        compile 'org.reactivestreams:reactive-streams:1.0.0'
+        compile 'io.advantageous:reakt:1.0.0.RELEASE'
+        testCompile project(':qbit:test-support')
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Go Channels inspired Java lib'
+                }
+            }
+        }
+    }
+}
+
+project('servlet') {
+
+    dependencies {
+        compile project(':qbit:core')
+
+        compile 'javax.servlet:javax.servlet-api:3.1.0'
+        compile 'javax.websocket:javax.websocket-all:1.1'
+
+        testCompile 'org.eclipse.jetty:jetty-server:9.3.0.M2'
+        testCompile 'org.eclipse.jetty:jetty-servlet:9.3.0.M2'
+        testCompile 'org.eclipse.jetty.websocket:javax-websocket-server-impl:9.3.0.M2'
+        testCompile 'org.eclipse.jetty:jetty-annotations:9.3.0.M2'
+
+        testCompile project(':qbit:test-support')
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'servlet support for qbit'
+                }
+            }
+        }
+    }
+}
+
+
+project('scala') {
+
+
+    apply plugin: 'scala'
+
+    dependencies {
+        compile project(':qbit:core')
+        compile 'org.scala-lang:scala-library:2.11.5'
+        testCompile project(':qbit:test-support')
+        testCompile 'org.scalatest:scalatest_2.10:2.2.5'
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Scala support for qbit'
+                }
+            }
+        }
+    }
+
+    tasks.withType(ScalaCompile) {
+        scalaCompileOptions.useAnt = false
+    }
+}
+
+project('vertx') {
+
+
+    ext {
+        vertxVersion = '3.2.1'
+    }
+
+    dependencies {
+        compile project(':qbit:core')
+        compile group: 'io.vertx', name: 'vertx-core', version: vertxVersion
+        compile group: 'io.vertx', name: 'vertx-web', version: vertxVersion
+
+        testCompile project(':qbit:test-support')
+
+
+        testCompile "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
+        testCompile "io.vertx:vertx-sockjs-service-proxy:$vertxVersion"
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Vertx support for qbit'
+                }
+            }
+        }
+    }
+}
+
+
+project('service-discovery') {
+
+
+    ext {
+        vertxVersion = '3.1.0'
+    }
+
+    dependencies {
+        compile project(':qbit:core')
+        compile group: 'io.vertx', name: 'vertx-core', version: vertxVersion
+        compile group: 'io.vertx', name: 'vertx-web', version: vertxVersion
+        testCompile project(':qbit:test-support')
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Vertx support for qbit'
+                }
+            }
+        }
+    }
+}
+
+
+project('consul-client') {
+
+
+    test.onlyIf { Boolean.getBoolean('integration.tests') }
+
+    dependencies {
+        compile project(":qbit:vertx")
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Consul client for qbit'
+                }
+            }
+        }
+    }
+}
+
+project('admin') {
+
+
+    test.onlyIf { Boolean.getBoolean('integration.tests') }
+    dependencies {
+        compile project(':qbit:consul-client')
+        compile project(':qbit:core')
+        testCompile project(':qbit:consul-client')
+        testCompile project(':qbit:test-support')
+        compile project(":qbit:vertx")
+        compile project(":qbit:service-discovery")
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Admin support for qbit'
+                }
+            }
+        }
+    }
+}
+
+project('spring') {
+
+    test.onlyIf { Boolean.getBoolean('integration.tests') }
+    dependencies {
+        compile project(':qbit:vertx')
+        compile project(':qbit:admin')
+        compile project(':qbit:consul-client')
+        compile project(":qbit:eventbus-replicator")
+        compile 'javax.inject:javax.inject:1'
+        compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
+        testCompile project(':qbit:test-support')
+        testCompile(
+                "org.springframework:spring-web:$springFrameworkVersion",
+                "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+        )
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Spring support for QBit'
+                }
+            }
+        }
+    }
+}
+
+project('eventbus-replicator') {
+
+    test.onlyIf { Boolean.getBoolean('integration.tests') }
+
+    dependencies {
+        compile project(':qbit:core')
+        compile project(':qbit:consul-client')
+        compile project(":qbit:vertx")
+        testCompile project(':qbit:test-support')
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Eventbus replication for qbit'
+                }
+            }
+        }
+    }
+}
+
+project('jms') {
+
+    javadoc.onlyIf { false }
+
+    dependencies {
+        compile project(":qbit:core")
+        testCompile project(':qbit:test-support')
+        compile 'org.apache.activemq:activemq-all:5.9.1'
+        compile 'org.apache.commons:commons-dbcp2:2.1.1'
+        compile 'org.postgresql:postgresql:9.4-1203-jdbc42'
+        compile 'ch.qos.logback:logback-core:1.1.3'
+        compile 'ch.qos.logback:logback-classic:1.1.3'
+        compile 'org.slf4j:slf4j-api:1.7.12'
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'JMS Support'
+                }
+            }
+        }
+    }
+}
+
+
+project('kafka') {
+
+    dependencies {
+
+        compile project(":qbit:core")
+        testCompile project(':qbit:test-support')
+        compile 'org.apache.kafka:kafka_2.10:0.8.2.0'
+        compile 'ch.qos.logback:logback-core:1.1.3'
+        compile 'ch.qos.logback:logback-classic:1.1.3'
+        compile 'org.slf4j:slf4j-api:1.7.12'
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Kafka Support'
+                }
+            }
+        }
+    }
+}
+
+
+project('redis') {
+
+    ext {
+        vertxVersion = '3.1.0'
+    }
+
+    dependencies {
+
+        compile project(":qbit:core")
+
+        compile project(":qbit:vertx")
+        testCompile project(':qbit:test-support')
+        compile 'ch.qos.logback:logback-core:1.1.3'
+        compile 'ch.qos.logback:logback-classic:1.1.3'
+        compile 'org.slf4j:slf4j-api:1.7.12'
+        testCompile project(':qbit:test-support')
+        compile group: 'io.vertx', name: 'vertx-redis-client', version: vertxVersion
+
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Redis Support'
+                }
+            }
+        }
+    }
+}
+
+project('test-support') {
+
+    dependencies {
+        compile project(':qbit:core')
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'support library for unit and integration tests'
+                }
+            }
+        }
+    }
+}
+
+project('guice') {
+    dependencies {
+        compile project(":qbit:core")
+        compile project(":qbit:vertx")
+        testCompile project(':qbit:test-support')
+        testCompile 'com.google.inject:guice:4.0'
+    }
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                pom.project {
+                    description 'Google Guice support for QBit'
+                }
+            }
+        }
+    }
+}
+
+class RunConsul extends DefaultTask {
+
+    def execFile = new File(project.rootDir, '/tmp/consul/bin/consul')
+
+    def zipFile = new File(project.rootDir, '/tmp/consul/bin/consul.zip')
+
+    def linuxDist = "https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip"
+    def macDist = "https://dl.bintray.com/mitchellh/consul/0.5.0_darwin_amd64.zip"
+    def zipURL = null
+
+
+    def findItUnpackIt() {
+
+
+        execFile.parentFile.mkdirs()
+
+        if (execFile.parentFile.exists()) {
+            println("${execFile.parentFile} created");
+        }
+
+
+        if (System.getProperty("os.name").contains("Mac OS X")) {
+            zipURL = macDist
+            println("On mac")
+        } else {
+            zipURL = linuxDist
+            println("On linux")
+
+
+            def osArc = System.getProperty("sun.arch.data.model")
+            def osName = System.getProperty("os.name")
+            def osVersion = System.getProperty("os.version")
+
+            println("os.arc Operating system architecture\t\t $osArc")
+            println("os.name Operating system name\t\t $osName")
+            println("os.version Operating system version\t\t $osVersion")
+        }
+
+        new URL(zipURL).withInputStream { i -> zipFile.withOutputStream { it << i } }
+
+
+        for (int index = 0; index < 10; index++) {
+            ant.sleep(seconds: 1)
+            if (zipFile.exists()) {
+                break;
+            }
+            println("Waiting for download $zipURL")
+        }
+
+        if (zipFile.exists()) {
+
+            println("${zipFile} ${zipFile.absoluteFile} ${zipFile.exists()} ${zipFile.size()}")
+            println(execFile.parentFile)
+
+            ant.unzip(src: zipFile, dest: execFile.parentFile)
+
+            ant.exec(command: "/bin/sh -c \"chmod +x ${execFile}\"")
+        } else {
+            println("Unable to create file $zipFile from $zipURL")
+        }
+
+
+    }
+
+    @TaskAction
+    void runIt() {
+
+        println("${execFile} is here")
+
+        if (!execFile.exists()) {
+
+            println("${execFile} did not exist")
+            findItUnpackIt()
+        }
+
+
+        mixinAntExec()
+        println("Running consul \n ${execFile}  agent -server -bootstrap -data-dir /tmp/consul")
+
+        "/bin/sh -c  \"${execFile}  agent -server -bootstrap -data-dir /tmp/consulqbit\"".antExec()
+
+        for (int index = 0; index < 5; index++) {
+            ant.sleep(seconds: 1)
+            ant.echo(message: "Waiting for consul $index")
+        }
+
+        System.setProperty("consul.running")
+    }
+
+
+    def mixinAntExec() {
+        String.metaClass.antExec = { failOnError = true -> antExec([delegate], failOnError) }
+        ArrayList.metaClass.antExec << { failOnError = true -> antExec(delegate, failOnError) }
+    }
+
+    def antExec(command, failOnError = true) {
+        def commandLiteral = command.collect { it.contains(' ') ? '"' + it + '"' : it }.join(' ')
+
+        println "ant exec with: ${commandLiteral}"
+
+        ant.exec(
+                failonerror: false,
+                spawn: true,
+                executable: command[0]) {
+            if (command.size() > 1)
+                arg(line: command[1..-1].collect { it.contains(' ') ? '"' + it + '"' : it }.join(' '))
+        }
+
+        def result = new Expando(
+                text: ant.project.properties.text,
+                error: ant.project.properties.error,
+                exitValue: ant.project.properties.exitValue as Integer,
+                toString: { text }
+        )
+
+        if (failOnError && result.exitValue != 0) {
+            throw new Exception("""command failed with ${result.exitValue}
+executed: ${commandLiteral}
+error: ${result.error}
+text: ${result.text}""")
+
+        }
+
+        return result
+    }
+}

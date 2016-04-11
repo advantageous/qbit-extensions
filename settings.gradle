@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2015. Rick Hightower, Geoff Chandler
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  		http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * QBit - The Microservice lib for Java : JSON, WebSocket, REST. Be The Web!
+ */
+rootProject.name = 'qbit-bundle'
+
+include 'qbit'
+include 'qbit:core', 'qbit:test-support', 'qbit:spring', 'qbit:jms', 'qbit:kafka', 'qbit:redis'
+include 'qbit:servlet', 'qbit:vertx', 'qbit:scala', "qbit:service-discovery"
+include 'qbit:consul-client', 'qbit:eventbus-replicator', 'qbit:admin'
+include 'qbit:guice'
+
+
+include 'examples:jms'
+include 'examples:standalone'
+include 'examples:basic', 'examples:basic:model', 'examples:basic:client', 'examples:basic:server'
+include 'examples:spring:spring-and-qbit-cpu-bench', 'examples:spring:spring-boot'
+
+include 'testing:performance'
+include 'testing:performance:client', 'testing:performance:server'
