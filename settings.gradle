@@ -15,13 +15,12 @@
  *
  * QBit - The Microservice lib for Java : JSON, WebSocket, REST. Be The Web!
  */
-rootProject.name = 'qbit-bundle'
+rootProject.name = 'qbit-extensions'
 
-include 'qbit'
-include 'qbit:core', 'qbit:test-support', 'qbit:spring', 'qbit:jms', 'qbit:kafka', 'qbit:redis'
-include 'qbit:servlet', 'qbit:vertx', 'qbit:scala', "qbit:service-discovery"
-include 'qbit:consul-client', 'qbit:eventbus-replicator', 'qbit:admin'
-include 'qbit:guice'
+include 'qbit-ext'
+include 'qbit-ext:spring', 'qbit-ext:jms', 'qbit-ext:kafka', 'qbit-ext:redis'
+include 'qbit-ext:servlet', 'qbit-ext:scala'
+include 'qbit-ext:eventbus-replicator', 'qbit-ext:guice'
 
 
 include 'examples:jms'
