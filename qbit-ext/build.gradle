@@ -98,13 +98,13 @@ subprojects {
 
                 pom.project {
                     packaging 'jar'
-                    url 'https://github.com/advantageous/qbit'
+                    url 'https://github.com/advantageous/qbit-extensions'
                     name archivesBaseName
 
                     scm {
-                        url 'scm:git@github.com:advantageous/qbit.git'
-                        connection 'scm:git@github.com:advantageous/qbit.git'
-                        developerConnection 'scm:git@github.com:advantageous/qbit.git'
+                        url 'scm:git@github.com:advantageous/qbit-extensions.git'
+                        connection 'scm:git@github.com:advantageous/qbit-extensions.git'
+                        developerConnection 'scm:git@github.com:advantageous/qbit-extensions.git'
                     }
 
                     licenses {
