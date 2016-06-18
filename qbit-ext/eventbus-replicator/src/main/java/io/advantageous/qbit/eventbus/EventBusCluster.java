@@ -23,12 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import static io.advantageous.qbit.eventbus.EventBusRemoteReplicatorBuilder.eventBusRemoteReplicatorBuilder;
 import static io.advantageous.qbit.eventbus.EventBusReplicationClientBuilder.eventBusReplicationClientBuilder;
@@ -88,8 +85,7 @@ public class EventBusCluster implements Startable, Stoppable {
 
         this.servicePool = new ServicePool(eventBusName, null);
 
-
-        endpointDefinition = serviceDiscovery.registerWithTTL(eventBusName, replicationPortLocal,
+        endpointDefinition = serviceDiscovery.registerWithTTL(eventBusName, replicationHostLocal, replicationPortLocal,
                 (int) replicationServerCheckInTimeUnit.toSeconds(replicationServerCheckInInterval));
 
         serviceDiscovery.checkInOk(endpointDefinition.getId());
@@ -136,7 +132,6 @@ public class EventBusCluster implements Startable, Stoppable {
                 EventManager.class, periodicScheduler, 100, TimeUnit.MILLISECONDS);
     }
 
-
     public EventManager createClientEventManager() {
         return eventServiceQueue().createProxy(EventManager.class);
     }
@@ -144,13 +139,11 @@ public class EventBusCluster implements Startable, Stoppable {
     @Override
     public void start() {
 
-
         if (eventServiceQueue != null) {
             eventServiceQueue.start();
         }
 
         startServerReplicator();
-
 
         healthyNodeMonitor = periodicScheduler.repeat(
                 this::healthyNodeMonitor, peerCheckTimeInterval, peerCheckTimeUnit);
@@ -168,9 +161,7 @@ public class EventBusCluster implements Startable, Stoppable {
         serviceDiscovery.checkInOk(endpointDefinition.getId());
     }
 
-
     private void startServerReplicator() {
-
 
         final EventBusRemoteReplicatorBuilder replicatorBuilder = eventBusRemoteReplicatorBuilder();
         replicatorBuilder.setName(this.eventBusName);
@@ -184,9 +175,7 @@ public class EventBusCluster implements Startable, Stoppable {
         serviceEndpointServerForReplicator.start();
     }
 
-
     private void healthyNodeMonitor() {
-
 
         if (debug) logger.debug("EventBusCluster::healthyNodeMonitor " + eventConnectorHub.size());
         final List<EndpointDefinition> endpointDefinitions = serviceDiscovery.loadServices(eventBusName);
@@ -211,7 +200,6 @@ public class EventBusCluster implements Startable, Stoppable {
             @Override
             public void serviceAdded(String serviceName, EndpointDefinition endpointDefinition) {
                 if (serviceName.equals(eventBusName)) {
-
 
                     if (replicationHostLocal.equals(endpointDefinition.getHost()) &&
                             replicationPortLocal == endpointDefinition.getPort()) {
@@ -245,7 +233,6 @@ public class EventBusCluster implements Startable, Stoppable {
 
         });
 
-
         if (change.get()) {
             if (removeNodes.size() > 0) {
                 removeServices(removeNodes);
@@ -254,9 +241,7 @@ public class EventBusCluster implements Startable, Stoppable {
             removeBadServices();
         }
 
-
     }
-
 
     private void addEventConnector(final String newHost, final int newPort) {
 
@@ -283,7 +268,6 @@ public class EventBusCluster implements Startable, Stoppable {
         while (listIterator.hasNext()) {
             final EventConnector connector = listIterator.next();
 
-
             /** Remove ones in the removeServicesList. */
             if (connector instanceof RemoteTCPClientProxy) {
 
@@ -309,10 +293,8 @@ public class EventBusCluster implements Startable, Stoppable {
 
         connectorsToRemove.forEach(eventConnectorHub::remove);
 
-
         return removeCount;
     }
-
 
     private int removeBadServices() {
         final ListIterator<EventConnector> listIterator = eventConnectorHub.listIterator();
@@ -322,7 +304,6 @@ public class EventBusCluster implements Startable, Stoppable {
 
         while (listIterator.hasNext()) {
             final EventConnector connector = listIterator.next();
-
 
             /** Remove connections that are closed. */
             if (connector instanceof RemoteTCPClientProxy) {
@@ -340,7 +321,6 @@ public class EventBusCluster implements Startable, Stoppable {
 
                     continue;
                 }
-
 
             }
 
@@ -391,7 +371,6 @@ public class EventBusCluster implements Startable, Stoppable {
         } catch (Exception ex) {
             logger.warn("EventBusCluster is unable to stop eventServiceQueue");
         }
-
 
     }
 }
