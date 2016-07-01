@@ -19,9 +19,9 @@ class QBitImplicitConversionsTest extends FlatSpec with Matchers {
   }
 
 
-  "A Function" should "convert to a consumer" in {
-    CallbackBuilder.newCallbackBuilder().withErrorHandler((error: Throwable) => {})
-  }
+//  "A Function" should "convert to a consumer" in {
+//    CallbackBuilder.newCallbackBuilder().withErrorHandler((error: Throwable) => {})
+//  }
 
 
 

@@ -54,9 +54,12 @@ public class TradeServiceLoadTestWebSocket {
                 totalCount += counts.get(c).get();
             }
 
+            long seconds = (System.currentTimeMillis()-startTime)/1000;
+
             puts("total", Str.num(totalCount),
+                    "\tseconds", seconds,
                     "\telapsed time", Str.num(System.currentTimeMillis()-startTime),
-                    "\trate", Str.num(totalCount/(System.currentTimeMillis()-startTime)*1000));
+                    "\trate", Str.num(totalCount/seconds));
         }
 
     }
@@ -67,27 +70,37 @@ public class TradeServiceLoadTestWebSocket {
      * @param count holds the total count
      */
     private static void runCalls(final int numCalls, final AtomicInteger count) {
-        final Client client = clientBuilder().setUri("/")
-                //.setHost("192.168.0.1")
-                .setAutoFlush(false).build();
+        final Client client = clientBuilder().setUri("/").build();
 
         final TradeServiceAsync tradeService = client.createProxy(TradeServiceAsync.class, "t");
 
         client.startClient();
 
         for (int call=0; call < numCalls; call++) {
-            tradeService.t(response -> {
+            tradeService.a(response -> {
                 if (response) {
                     count.incrementAndGet();
+                    //System.out.println("count " + count.get());
                 }
             }, new Trade("IBM", 1));
 
-            /** Apply some back pressure. */
-            if (call % 10 == 0) {
-                while (call - 5_000 > count.get()) {
-                    Sys.sleep(10);
+//            tradeService.t2(new Trade("IBM", 1))
+//                    .then(response -> {
+//                                if (response) {
+//                                    count.incrementAndGet();
+//                                }
+//                            }
+//                    )
+//                    .catchError(Throwable::printStackTrace)
+//                    .invoke();
+
+            if (call % 100 == 0) {
+                if (call > count.get() - 2000) {
+                    Sys.sleep(1);
                 }
+                //flushServiceProxy(tradeService);
             }
+
         }
 
         flushServiceProxy(tradeService);
